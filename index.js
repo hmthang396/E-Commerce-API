@@ -47,11 +47,11 @@ app.use("/api/server/subcategory", Authentication, require('./src/routes/server/
 app.use("/api/server/brand", Authentication, require('./src/routes/server/Brand.route'));
 app.use("/api/server/discount", Authentication, require('./src/routes/server/Discount.route'));
 app.use("/api/server/collection", Authentication, require('./src/routes/server/Collection.route'));
-// Authentication, Authorization.isAdministrator,
-app.use("/api/server/account", require('./src/routes/server/Account.route'));
+app.use("/api/server/account",Authentication, Authorization.isAdministrator, require('./src/routes/server/Account.route'));
 app.use("/api/server/login", require('./src/routes/server/Login.route'));
 app.use("/api/server/order", Authentication, require('./src/routes/server/Order.route'));
 app.use("/api/server/transaction", Authentication, require('./src/routes/server/Transaction.route'));
+app.use("/api/server/dashboard", Authentication, require('./src/routes/server/Dashboard.route'));
 
 app.use("/api/client/product", require('./src/routes/client/Product.route'));
 app.use("/api/client/order", require('./src/routes/client/Order.route'));

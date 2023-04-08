@@ -16,7 +16,7 @@ module.exports = (sequelize, DataTypes) => {
           name: "colorId",
         },
       });
-      this.hasMany(models.Order, {
+      this.belongsTo(models.Order, {
         foreignKey: {
           name: "orderId",
         },

@@ -15,17 +15,18 @@ module.exports = (sequelize, DataTypes) => {
           name: "userId",
         },
       });
+      this.hasMany(models.DetailOrder, {
+        foreignKey: {
+          name: "orderId",
+        },
+      });
       this.belongsToMany(models.Product, {
         through: { model: models.DetailOrder, unique: false },
         foreignKey: {
           name: "orderId",
         },
       });
-      this.hasMany(models.DetailOrder, {
-        foreignKey: {
-          name: "orderId",
-        },
-      });
+      
     }
   }
   Order.init({

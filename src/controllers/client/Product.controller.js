@@ -375,7 +375,7 @@ module.exports = {
                 model: db.Product,
             }],
             order: [
-                [db.sequelize.literal('ABS("price")'), 'ASC'],
+                [db.sequelize.literal('CAST("price" as INTEGER)'), 'ASC'],
             ],
         });
         let listProductId = topPrice.map((e) => { return e.Products[0].id; });
