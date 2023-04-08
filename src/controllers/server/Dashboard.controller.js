@@ -37,7 +37,7 @@ const getSumQuanlityOfDetailOrderByCategoryAndMonths = async (category, months) 
                 ],
                 raw: true
             });
-            return data.value ? parseInt(data.value) : 0;
+            return (data.value) ? parseInt(data?.value) : 0;
         })
     );
     return result;
@@ -49,7 +49,7 @@ const getTotalNumberProductsByCategory = async (categories) => {
             const values = await getSumQuanlityOfDetailOrderByCategoryAndMonths(category, valuesToSum);
             return {
                 title: category.title,
-                value: values.map((e) => { return e.value })
+                value: values.map((e) => { return e?.value || 0 })
                 //...values.reduce((acc, value, idx) => ([...acc, value.value ]), []) // convert the array of values into an object with keys value1 to value12
             }
         })
@@ -108,7 +108,7 @@ const getTotalNumberOfProductsBySubCategory = async (subCategories) => {
             const values = await getSumQuantityOfDetailOrderBySubCategoryAndMonths(subCatetory, valuesToSum);
             return {
                 title: subCatetory.title,
-                value: values.map((e) => { return e.value })
+                value: values.map((e) => { return e?.value || 0 })
                 //...values.reduce((acc, value, idx) => ({ ...acc, [`value${idx + 1}`]: value.value }), {}) // convert the array of values into an object with keys value1 to value12
             }
         })
