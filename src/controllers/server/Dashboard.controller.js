@@ -9,10 +9,7 @@ const getSumQuanlityOfDetailOrderByCategoryAndMonths = async (category, months) 
     }));
     const result = await Promise.allSettled(
         monthRanges.map(async ({ firstDayOfMonth, lastDayOfMonth }) => {
-            let data = await db.DetailOrder.findOne({
-                attributes: [
-                    [db.sequelize.fn('sum', db.sequelize.col('quanlity')), 'value'],
-                ],
+            let data = await db.DetailOrder.sum(`quanlity`, {
                 required: true,
                 where: {
                     createdAt: {
@@ -36,8 +33,37 @@ const getSumQuanlityOfDetailOrderByCategoryAndMonths = async (category, months) 
                     }
                 ],
                 raw: true
-            });
-            return (data.value) ? parseInt(data?.value) : 0;
+            })
+            
+            // let data = await db.DetailOrder.findOne({
+            //     attributes: [
+            //         [db.sequelize.fn('sum', db.sequelize.col('quanlity')), 'value'],
+            //     ],
+            //     required: true,
+            //     where: {
+            //         createdAt: {
+            //             [Op.gte]: firstDayOfMonth,
+            //             [Op.lte]: lastDayOfMonth
+            //         }
+            //     },
+            //     include: [
+            //         {
+            //             attributes: [],
+            //             model: db.Product,
+            //             required: true,
+            //             include: [{
+            //                 attributes: [],
+            //                 model: db.Category,
+            //                 required: true,
+            //                 where: {
+            //                     id: category.id
+            //                 }
+            //             }]
+            //         }
+            //     ],
+            //     raw: true
+            // });
+            return (data) ? parseInt(data) : 0;
         })
     );
     return result;
@@ -65,6 +91,31 @@ const getSumQuantityOfDetailOrderBySubCategoryAndMonths = async (subCategory, mo
     }));
     const result = await Promise.allSettled(
         monthRanges.map(async ({ firstDayOfMonth, lastDayOfMonth }) => {
+            let data = await db.DetailOrder.sum(`quanlity`, {
+                where: {
+                    createdAt: {
+                        [Op.gte]: firstDayOfMonth,
+                        [Op.lte]: lastDayOfMonth
+                    }
+                },
+                required: true,
+                include:
+                {
+                    model: db.Product,
+                    required: true,
+                    attributes: [],
+                    include: {
+                        attributes: [],
+                        model: db.SubCategory,
+                        required: true,
+                        where: {
+                            id: subCategory.id
+                        }
+                    }
+                },
+                raw: true
+            });
+            /*
             let data = await db.DetailOrder.findOne({
                 attributes: [
                     [db.sequelize.fn('sum', db.sequelize.col('quanlity')), 'value'],
@@ -95,7 +146,8 @@ const getSumQuantityOfDetailOrderBySubCategoryAndMonths = async (subCategory, mo
                 },
                 raw: true
             });
-            return data.value ? parseInt(data.value) : 0;
+            */
+            return data ? parseInt(data) : 0;
         })
     );
     return result;
