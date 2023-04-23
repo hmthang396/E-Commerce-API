@@ -22,7 +22,12 @@ router.put("/", Authorization.isManager, Authorization.isUpdate, async (req, res
     try {
         let { status, code } = req.body;
         if (isEmpty("status", req.body) || isEmpty("code", req.body)) { throw Error("Request Body is invalid"); }
-        let result = await orderController.updateStatus({ status, code });
+        let result;
+        if (status === "Hoàn thành") {
+            result = await orderController.updateStatus({ status, code, isCheckout: true });
+        } else {
+            result = await orderController.updateStatus({ status, code });
+        }
         return res.status(200).json({
             Data: result,
             ErrorCode: 0,
