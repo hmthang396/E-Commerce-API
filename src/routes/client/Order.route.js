@@ -3,6 +3,7 @@ const orderController = require('../../controllers/client/Order.controller');
 const productController = require('../../controllers/client/Product.controller');
 const detailOrderController = require('../../controllers/client/DetailOrder.controller');
 const { checkValidityOfInputData, isEmpty } = require("../../utils/checkValidity");
+const { generateAccessToken, createOrder } = require("../../utils/payment");
 var router = express.Router();
 // 
 const createOrderCode = (length) => {
@@ -82,9 +83,9 @@ const calPrice = (product) => {
 
 router.get(`/`, async (req, res, next) => {
     try {
-        let { code,userId } = req.query;
+        let { code, userId } = req.query;
         if (isEmpty("code", req.query) && isEmpty("userId", req.query)) { throw Error("Request Query is invalid"); }
-        let result = await orderController.getOrderByCodeAndUserId({code,userId});
+        let result = await orderController.getOrderByCodeAndUserId({ code, userId });
         res.status(200).json({
             Data: result,
             ErrorCode: 0,
@@ -131,47 +132,111 @@ router.post("/", async (req, res, next) => {
     try {
         let { fullname, address, phoneNumber, city, county, orders, userId, method } = req.body;
         if (!checkValidityOfInputData(["fullname", "address", "city", "phoneNumber", "county", "orders", "userId", "method"], req.body)) { throw Error("Request Body is invalid"); }
-
         let orderCodeProcess = checkCodeIsUnique();
         let totalPriceProcess = sumPriceOfOrder(orders);
-
         let orderCode = await orderCodeProcess;
         let totalPrice = await totalPriceProcess;
 
-        const result = await orderController.createOrder({
-            code: orderCode,
-            total: totalPrice,
-            status: "Chờ xác thực",
-            fullname: fullname,
-            address: `${address}, ${county}, ${city}`,
-            phoneNumber: phoneNumber,
-            method: method,
-            userId: userId
-        });
-
-        for (const order of orders) {
-            let productProcess = productController.getPriceOfProductByColorIDAndProductId({ productId: order.id, colorId: order.Colors[0].id });
-            let detailCodeProcess = checkCodeDetailIsUnique();
-            let product = await productProcess;
-            let detailCode = await detailCodeProcess;
-            let price = calPrice(product);
-            detailOrderController.createDetailOrder({
-                price: price,
-                colorId: order?.Colors[0].id,
-                size: order?.size,
-                quanlity: order?.qty,
+        if (method === "PayPal") {
+            let access_token = await generateAccessToken();
+            let body = {
+                intent: "CAPTURE",
+                purchase_units: [
+                    {
+                        reference_id: orderCode,
+                        amount: {
+                            currency_code: "USD",
+                            value: (totalPrice / 23000).toFixed(2)
+                        }
+                    }
+                ],
+                payment_source: {
+                    paypal: {
+                        experience_context: {
+                            "payment_method_preference": "IMMEDIATE_PAYMENT_REQUIRED",
+                            "payment_method_selected": "PAYPAL",
+                            "brand_name": "HMTHANG",
+                            "locale": "en-US",
+                            "landing_page": "LOGIN",
+                            "user_action": "PAY_NOW",
+                            "return_url": `${process.env.PAYPAL_URL_RETURN}`,
+                            "cancel_url": `${process.env.PAYPAL_URL_CANCAL}`
+                        }
+                    }
+                }
+            }
+            const order_Paypal = await createOrder(access_token, body, orderCode);
+            const result = await orderController.createOrder({
+                code: order_Paypal.id,
+                total: totalPrice,
                 status: "Chờ xác thực",
-                orderId: result?.id,
-                code: detailCode,
-                productId: product?.id
+                fullname: fullname,
+                address: `${address}, ${county}, ${city}`,
+                phoneNumber: phoneNumber,
+                method: method,
+                userId: userId,
+                isCheckout: false
             });
-        };
+            for (const order of orders) {
+                let productProcess = productController.getPriceOfProductByColorIDAndProductId({ productId: order.id, colorId: order.Colors[0].id });
+                let detailCodeProcess = checkCodeDetailIsUnique();
+                let product = await productProcess;
+                let detailCode = await detailCodeProcess;
+                let price = calPrice(product);
+                detailOrderController.createDetailOrder({
+                    price: price,
+                    colorId: order?.Colors[0].id,
+                    size: order?.size,
+                    quanlity: order?.qty,
+                    status: "Chờ xác thực",
+                    orderId: result?.id,
+                    code: detailCode,
+                    productId: product?.id,
+                });
+            };
+            res.status(200).json({
+                Data: order_Paypal,
+                ErrorCode: 0,
+                Message: "Success",
+            });
 
-        res.status(200).json({
-            Data: result,
-            ErrorCode: 0,
-            Message: "Success",
-        });
+        } else if (method === "COD") {
+            const result = await orderController.createOrder({
+                code: orderCode,
+                total: totalPrice,
+                status: "Chờ xác thực",
+                fullname: fullname,
+                address: `${address}, ${county}, ${city}`,
+                phoneNumber: phoneNumber,
+                method: method,
+                userId: userId,
+                isCheckout: false
+            });
+
+            for (const order of orders) {
+                let productProcess = productController.getPriceOfProductByColorIDAndProductId({ productId: order.id, colorId: order.Colors[0].id });
+                let detailCodeProcess = checkCodeDetailIsUnique();
+                let product = await productProcess;
+                let detailCode = await detailCodeProcess;
+                let price = calPrice(product);
+                detailOrderController.createDetailOrder({
+                    price: price,
+                    colorId: order?.Colors[0].id,
+                    size: order?.size,
+                    quanlity: order?.qty,
+                    status: "Chờ xác thực",
+                    orderId: result?.id,
+                    code: detailCode,
+                    productId: product?.id,
+                });
+            };
+
+            res.status(200).json({
+                Data: result,
+                ErrorCode: 0,
+                Message: "Success",
+            });
+        }
     } catch (error) {
         console.log(error);
         next(error);

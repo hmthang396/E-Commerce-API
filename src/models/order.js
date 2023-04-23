@@ -36,6 +36,7 @@ module.exports = (sequelize, DataTypes) => {
     fullname: DataTypes.STRING,
     address: DataTypes.STRING,
     method: DataTypes.STRING,
+    isCheckout: DataTypes.BOOLEAN,
     phoneNumber: DataTypes.STRING
   }, {
     sequelize,

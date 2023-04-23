@@ -61,6 +61,7 @@ app.use("/api/client/category", require('./src/routes/client/Category.route'));
 app.use("/api/client/comment", require('./src/routes/client/Comment.route'));
 app.use("/api/client/like", require('./src/routes/client/Like.route'));
 app.use('/api/client/oauth', require('./src/routes/client/OAuth.route'));
+app.use('/api/client/payment', require('./src/routes/client/Payment.router'));
 // Error Handling Middleware called
 
 app.use((req, res, next) => {
